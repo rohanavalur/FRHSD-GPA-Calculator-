@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FRHSD Final Grade Calculator</title>
+  <style>
+
+    :root {
+      --bg: #f8f7f3;
+      --surface: #fbfaf7;
+      --surface-2: #f3f1eb;
+      --line: #d9d4ca;
+      --line-dark: #c4beb2;
+      --text: #1f1f1f;
+      --muted: #666157;
+      --accent: #2f3d4d;
+      --accent-soft: #eef1f4;
+      --row-alt: #f6f4ee;
+      --button: #f4f2ec;
+      --button-hover: #ebe8e0;
+      --danger: #8d3c33;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", Times, serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .site-nav {
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 247, 243, 0.94);
+    }
+
+    .nav-inner {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      border-bottom: 1px solid transparent;
+      padding: 4px 0;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .page {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 46px 0 72px;
+    }
+
+    header {
+      margin-bottom: 34px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .intro {
+      margin-top: 10px;
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .calculator {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 880px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    thead th {
+      background: var(--surface-2);
+      color: var(--accent);
+      text-align: left;
+      font-size: 0.84rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--line-dark);
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--row-alt);
+    }
+
+    tbody td,
+    tfoot td {
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      vertical-align: middle;
+      font-size: 0.98rem;
+    }
+
+    tfoot td {
+      background: #f1eee7;
+      font-weight: 600;
+    }
+
+    input,
+    select {
+      width: 100%;
+      appearance: none;
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--line-dark);
+      border-radius: 0;
+      padding: 9px 10px;
+      font: inherit;
+      line-height: 1.2;
+      outline: none;
+    }
+
+    select {
+      background-image:
+        linear-gradient(45deg, transparent 50%, #666 50%),
+        linear-gradient(135deg, #666 50%, transparent 50%);
+      background-position:
+        calc(100% - 16px) calc(50% - 2px),
+        calc(100% - 11px) calc(50% - 2px);
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      padding-right: 28px;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(47, 61, 77, 0.08);
+    }
+
+    .number-cell,
+    .points-cell,
+    .center {
+      text-align: center;
+    }
+
+    .points-cell {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .grade-weight,
+    .quality-points,
+    #totalCreditsFooter,
+    #totalPointsFooter,
+    #gpaFooter,
+    #gpaDisplay,
+    #totalPointsDisplay,
+    #totalCreditsDisplay {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .remove-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1.35rem;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    .remove-btn:hover {
+      opacity: 0.75;
+    }
+
+    .controls,
+    .final-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .add-btn,
+    .clear-btn,
+    .final-clear-btn {
+      border: 1px solid var(--line-dark);
+      background: var(--button);
+      color: var(--text);
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .add-btn:hover,
+    .clear-btn:hover,
+    .final-clear-btn:hover {
+      background: var(--button-hover);
+    }
+
+    .add-btn {
+      min-width: 132px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .result {
+      display: grid;
+      gap: 4px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .result .gpa {
+      display: block;
+      font-size: clamp(2rem, 5vw, 2.6rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .result .details {
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .credit-list,
+    .about {
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .credit-list {
+      padding-top: 4px;
+    }
+
+    .credit-list strong,
+    .about h2 {
+      color: var(--text);
+    }
+
+    .about {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      max-width: 820px;
+    }
+
+    .about h2 {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+
+    .about p {
+      margin: 0;
+    }
+
+    .about a {
+      color: var(--accent);
+    }
+
+    .final-grade-section {
+      display: grid;
+      gap: 18px;
+    }
+
+    .final-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .final-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .final-card h2 {
+      margin: 0;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      color: var(--accent);
+      border-bottom: 1px solid var(--line-dark);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .final-table {
+      min-width: 0;
+      table-layout: auto;
+    }
+
+    .final-table th,
+    .final-table td {
+      text-align: center;
+      padding: 10px 8px;
+    }
+
+    .final-table thead th {
+      font-size: 0.78rem;
+    }
+
+    .final-table select {
+      min-width: 74px;
+    }
+
+    .static-grade {
+      display: inline-flex;
+      min-width: 54px;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line-dark);
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .final-output {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 760px) {
+      .nav-inner {
+        width: min(100% - 24px, 1080px);
+        min-height: auto;
+        padding: 14px 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nav-links {
+        gap: 14px;
+      }
+
+      .page {
+        width: min(100% - 24px, 1080px);
+        padding-top: 34px;
+        padding-bottom: 48px;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      .controls,
+      .button-row,
+      .final-controls {
+        width: 100%;
+      }
+
+      .add-btn,
+      .clear-btn,
+      .final-clear-btn {
+        flex: 1 1 auto;
+        text-align: center;
+      }
+
+      .final-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">FRHSD GPA Calculator</a>
+      <div class="nav-links">
+        <a href="index.html">GPA Calculator</a>
+        <a class="active" href="final-grade.html">Final Grade Calculator</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <main class="page">
+    <header>
+      <h1>Final Grade Calculator</h1>
+      <p class="intro">Enter marking period and exam grades to estimate the final course grade. The letter grade and decimal value update automatically.</p>
+    </header>
+
+    <section class="final-grade-section" aria-label="Final grade calculators">
+      <div class="final-grid" id="finalGradeGrid"></div>
+
+      <div class="final-controls">
+        <button class="final-clear-btn" id="clearFinalGradesBtn" type="button">Clear final grades</button>
+      </div>
+    </section>
+
+    <section class="about">
+      <h2>What is this?</h2>
+      <p>
+        This final grade calculator uses the same letter-grade values and final-grade cutoffs from the spreadsheet version. It includes full-year, semester, 3/4, and 1/4 course calculators, plus versions for students excused from the final exam.
+      </p>
+    </section>
+  </main>
+
+
+  <script>
+    const finalGradeValues = {
+      "A+": 4.6,
+      "A": 4.3,
+      "A-": 4.0,
+      "B+": 3.6,
+      "B": 3.3,
+      "B-": 3.0,
+      "C+": 2.6,
+      "C": 2.3,
+      "C-": 2.0,
+      "D+": 1.6,
+      "D": 1.3,
+      "E": 0.0
+    };
+
+    const finalGradeCutoffs = [
+      { min: 0.00, grade: "E" },
+      { min: 0.72, grade: "D" },
+      { min: 1.45, grade: "D+" },
+      { min: 1.75, grade: "C-" },
+      { min: 2.15, grade: "C" },
+      { min: 2.45, grade: "C+" },
+      { min: 2.75, grade: "B-" },
+      { min: 3.15, grade: "B" },
+      { min: 3.45, grade: "B+" },
+      { min: 3.75, grade: "A-" },
+      { min: 4.15, grade: "A" },
+      { min: 4.45, grade: "A+" }
+    ];
+
+    const finalGradeCalculators = [
+      {
+        id: "full-year",
+        title: "Full Year Course",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "me", label: "ME" },
+          { key: "mp3", label: "3rd" },
+          { key: "mp4", label: "4th" },
+          { key: "fe", label: "FE" }
+        ],
+        calculate: values => (
+          values.me + values.fe +
+          values.mp1 * 2 + values.mp2 * 2 + values.mp3 * 2 + values.mp4 * 2
+        ) / 10
+      },
+      {
+        id: "semester",
+        title: "Semester Course",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "fe", label: "FE" }
+        ],
+        calculate: values => (values.fe + values.mp1 * 2 + values.mp2 * 2) / 5
+      },
+      {
+        id: "three-quarter",
+        title: "3/4 Course",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "mp3", label: "3rd" },
+          { key: "fe", label: "FE" }
+        ],
+        calculate: values => (values.fe + values.mp1 + values.mp2 + values.mp3) / 4
+      },
+      {
+        id: "quarter",
+        title: "1/4 Course",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "fe", label: "FE" }
+        ],
+        calculate: values => (values.fe + values.mp1 * 4) / 5
+      },
+      {
+        id: "full-year-excused",
+        title: "Full Year Course — Excused Final",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "me", label: "ME" },
+          { key: "mp3", label: "3rd" },
+          { key: "mp4", label: "4th" },
+          { key: "fe", label: "FE", staticValue: "X" }
+        ],
+        calculate: values => (
+          values.me +
+          values.mp1 * 2 + values.mp2 * 2 + values.mp3 * 2 + values.mp4 * 2
+        ) / 9
+      },
+      {
+        id: "semester-excused",
+        title: "Semester Course — Excused Final",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "fe", label: "FE", staticValue: "X" }
+        ],
+        calculate: values => (values.mp1 * 2 + values.mp2 * 2) / 4
+      },
+      {
+        id: "three-quarter-excused",
+        title: "3/4 Course — Excused Final",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "mp2", label: "2nd" },
+          { key: "mp3", label: "3rd" },
+          { key: "fe", label: "FE", staticValue: "X" }
+        ],
+        calculate: values => (values.mp1 + values.mp2 + values.mp3) / 3
+      },
+      {
+        id: "quarter-excused",
+        title: "1/4 Course — Excused Final",
+        fields: [
+          { key: "mp1", label: "1st" },
+          { key: "fe", label: "FE", staticValue: "X" }
+        ],
+        calculate: values => values.mp1
+      }
+    ];
+
+    const finalGradeGrid = document.getElementById("finalGradeGrid");
+
+    function makeOption(value, text, selectedValue) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = text;
+      if (String(value) === String(selectedValue)) option.selected = true;
+      return option;
+    }
+
+    function makeGradeSelect(calculatorId, fieldKey, selectedValue = "") {
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", fieldKey);
+      select.dataset.calculatorId = calculatorId;
+      select.dataset.fieldKey = fieldKey;
+
+      select.appendChild(makeOption("", "—", selectedValue));
+      Object.keys(finalGradeValues).forEach(grade => {
+        select.appendChild(makeOption(grade, grade, selectedValue));
+      });
+
+      select.addEventListener("change", () => {
+        updateFinalGradeCalculator(calculatorId);
+        saveFinalGradeInputs();
+      });
+
+      return select;
+    }
+
+    function decimalToFinalLetter(decimalValue) {
+      let finalLetter = "E";
+
+      finalGradeCutoffs.forEach(cutoff => {
+        if (decimalValue >= cutoff.min) finalLetter = cutoff.grade;
+      });
+
+      return finalLetter;
+    }
+
+    function buildFinalGradeCalculator(calculator) {
+      const card = document.createElement("section");
+      card.className = "final-card";
+      card.dataset.calculatorId = calculator.id;
+
+      const title = document.createElement("h2");
+      title.textContent = calculator.title;
+
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "table-wrap";
+
+      const table = document.createElement("table");
+      table.className = "final-table";
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      calculator.fields.forEach(field => {
+        const th = document.createElement("th");
+        th.textContent = field.label;
+        headerRow.appendChild(th);
+      });
+      ["Final Grade", "Decimal"].forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      const tbody = document.createElement("tbody");
+      const inputRow = document.createElement("tr");
+
+      calculator.fields.forEach(field => {
+        const td = document.createElement("td");
+
+        if (field.staticValue) {
+          const span = document.createElement("span");
+          span.className = "static-grade";
+          span.textContent = field.staticValue;
+          td.appendChild(span);
+        } else {
+          td.appendChild(makeGradeSelect(calculator.id, field.key));
+        }
+
+        inputRow.appendChild(td);
+      });
+
+      const letterOutput = document.createElement("td");
+      letterOutput.className = "final-output final-letter";
+      letterOutput.textContent = "—";
+
+      const decimalOutput = document.createElement("td");
+      decimalOutput.className = "final-output final-decimal";
+      decimalOutput.textContent = "—";
+
+      inputRow.append(letterOutput, decimalOutput);
+      tbody.appendChild(inputRow);
+
+      table.append(thead, tbody);
+      tableWrap.appendChild(table);
+      card.append(title, tableWrap);
+      finalGradeGrid.appendChild(card);
+    }
+
+    function getCalculatorConfig(calculatorId) {
+      return finalGradeCalculators.find(calculator => calculator.id === calculatorId);
+    }
+
+    function updateFinalGradeCalculator(calculatorId) {
+      const calculator = getCalculatorConfig(calculatorId);
+      const card = finalGradeGrid.querySelector(`[data-calculator-id="${calculatorId}"]`);
+      const values = {};
+
+      for (const field of calculator.fields) {
+        if (field.staticValue) continue;
+
+        const select = card.querySelector(`select[data-field-key="${field.key}"]`);
+        if (!select || !select.value) {
+          card.querySelector(".final-letter").textContent = "—";
+          card.querySelector(".final-decimal").textContent = "—";
+          return;
+        }
+
+        values[field.key] = finalGradeValues[select.value];
+      }
+
+      const decimalValue = calculator.calculate(values);
+      card.querySelector(".final-letter").textContent = decimalToFinalLetter(decimalValue);
+      card.querySelector(".final-decimal").textContent = decimalValue.toFixed(2);
+    }
+
+    function updateAllFinalGradeCalculators() {
+      finalGradeCalculators.forEach(calculator => updateFinalGradeCalculator(calculator.id));
+    }
+
+    function collectFinalGradeInputs() {
+      const saved = {};
+
+      finalGradeGrid.querySelectorAll("select[data-calculator-id]").forEach(select => {
+        const calculatorId = select.dataset.calculatorId;
+        if (!saved[calculatorId]) saved[calculatorId] = {};
+        saved[calculatorId][select.dataset.fieldKey] = select.value;
+      });
+
+      return saved;
+    }
+
+    function saveFinalGradeInputs() {
+      localStorage.setItem("frhsdFinalGradeInputs", JSON.stringify(collectFinalGradeInputs()));
+    }
+
+    function loadFinalGradeInputs() {
+      const saved = localStorage.getItem("frhsdFinalGradeInputs");
+      if (!saved) return;
+
+      try {
+        const parsed = JSON.parse(saved);
+
+        finalGradeGrid.querySelectorAll("select[data-calculator-id]").forEach(select => {
+          const calculatorId = select.dataset.calculatorId;
+          const fieldKey = select.dataset.fieldKey;
+
+          if (parsed[calculatorId] && parsed[calculatorId][fieldKey]) {
+            select.value = parsed[calculatorId][fieldKey];
+          }
+        });
+
+        updateAllFinalGradeCalculators();
+      } catch {
+        localStorage.removeItem("frhsdFinalGradeInputs");
+      }
+    }
+
+    function loadFinalGradeCalculators() {
+      finalGradeCalculators.forEach(buildFinalGradeCalculator);
+      loadFinalGradeInputs();
+      updateAllFinalGradeCalculators();
+    }
+
+    function clearFinalGradeInputs() {
+      finalGradeGrid.querySelectorAll("select[data-calculator-id]").forEach(select => {
+        select.value = "";
+      });
+      localStorage.removeItem("frhsdFinalGradeInputs");
+      updateAllFinalGradeCalculators();
+    }
+
+    document.getElementById("clearFinalGradesBtn").addEventListener("click", clearFinalGradeInputs);
+    window.addEventListener("beforeunload", saveFinalGradeInputs);
+    loadFinalGradeCalculators();
+  </script>
+
+</body>
+</html>
