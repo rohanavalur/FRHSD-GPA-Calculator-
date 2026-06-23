@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FRHSD GPA Calculator</title>
   <style>
+
     :root {
       --bg: #f8f7f3;
       --surface: #fbfaf7;
@@ -34,10 +35,55 @@
       line-height: 1.55;
     }
 
+    .site-nav {
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 247, 243, 0.94);
+    }
+
+    .nav-inner {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      border-bottom: 1px solid transparent;
+      padding: 4px 0;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
     .page {
       width: min(1080px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 56px 0 72px;
+      padding: 46px 0 72px;
     }
 
     header {
@@ -179,7 +225,8 @@
       opacity: 0.75;
     }
 
-    .controls {
+    .controls,
+    .final-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
@@ -191,7 +238,8 @@
     }
 
     .add-btn,
-    .clear-btn {
+    .clear-btn,
+    .final-clear-btn {
       border: 1px solid var(--line-dark);
       background: var(--button);
       color: var(--text);
@@ -201,7 +249,8 @@
     }
 
     .add-btn:hover,
-    .clear-btn:hover {
+    .clear-btn:hover,
+    .final-clear-btn:hover {
       background: var(--button-hover);
     }
 
@@ -277,7 +326,82 @@
       color: var(--accent);
     }
 
+    .final-grade-section {
+      display: grid;
+      gap: 18px;
+    }
+
+    .final-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .final-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .final-card h2 {
+      margin: 0;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      color: var(--accent);
+      border-bottom: 1px solid var(--line-dark);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .final-table {
+      min-width: 0;
+      table-layout: auto;
+    }
+
+    .final-table th,
+    .final-table td {
+      text-align: center;
+      padding: 10px 8px;
+    }
+
+    .final-table thead th {
+      font-size: 0.78rem;
+    }
+
+    .final-table select {
+      min-width: 74px;
+    }
+
+    .static-grade {
+      display: inline-flex;
+      min-width: 54px;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line-dark);
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .final-output {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
     @media (max-width: 760px) {
+      .nav-inner {
+        width: min(100% - 24px, 1080px);
+        min-height: auto;
+        padding: 14px 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nav-links {
+        gap: 14px;
+      }
+
       .page {
         width: min(100% - 24px, 1080px);
         padding-top: 34px;
@@ -289,22 +413,41 @@
       }
 
       .controls,
-      .button-row {
+      .button-row,
+      .final-controls {
         width: 100%;
       }
 
       .add-btn,
-      .clear-btn {
+      .clear-btn,
+      .final-clear-btn {
         flex: 1 1 auto;
         text-align: center;
       }
+
+      .final-grid {
+        grid-template-columns: 1fr;
+      }
     }
+
   </style>
 </head>
 <body>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">FRHSD GPA Calculator</a>
+      <div class="nav-links">
+        <a class="active" href="index.html">GPA Calculator</a>
+        <a href="final-grade.html">Final Grade Calculator</a>
+      </div>
+    </div>
+  </nav>
+
+
   <main class="page">
     <header>
-      <h1>FRHSD GPA Calculator</h1>
+      <h1>GPA Calculator</h1>
       <p class="intro">A simple calculator based on the Freehold Regional High School District weighting system.</p>
     </header>
 
@@ -371,6 +514,7 @@
       </p>
     </section>
   </main>
+
 
   <script>
     const weights = {
@@ -576,5 +720,6 @@
     window.addEventListener("beforeunload", saveCourses);
     loadCourses();
   </script>
+
 </body>
 </html>
