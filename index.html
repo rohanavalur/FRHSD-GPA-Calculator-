@@ -390,6 +390,134 @@
       font-variant-numeric: tabular-nums;
     }
 
+
+    .import-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 18px 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .import-panel h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .import-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .import-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .file-input {
+      border: 1px solid var(--line-dark);
+      background: #fff;
+      padding: 9px 10px;
+      max-width: 420px;
+    }
+
+    .import-btn,
+    .import-secondary-btn {
+      border: 1px solid var(--line-dark);
+      background: var(--button);
+      color: var(--text);
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .import-btn:hover,
+    .import-secondary-btn:hover {
+      background: var(--button-hover);
+    }
+
+    .import-btn:disabled,
+    .import-secondary-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .import-status {
+      color: var(--muted);
+      font-size: 0.95rem;
+      min-height: 1.4em;
+    }
+
+    .preview-panel {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      display: none;
+      gap: 12px;
+    }
+
+    .preview-panel.visible {
+      display: grid;
+    }
+
+    .preview-note {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .preview-table {
+      min-width: 880px;
+    }
+
+    .preview-table th,
+    .preview-table td {
+      font-size: 0.92rem;
+      padding: 8px 10px;
+    }
+
+    .preview-table input[type="checkbox"] {
+      width: auto;
+      appearance: auto;
+    }
+
+    .preview-table input,
+    .preview-table select {
+      padding: 7px 8px;
+      font-size: 0.92rem;
+    }
+
+    .ocr-text-toggle {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+      width: fit-content;
+      font-size: 0.95rem;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+
+    .ocr-raw-text {
+      display: none;
+      white-space: pre-wrap;
+      background: #fff;
+      border: 1px solid var(--line);
+      padding: 12px;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.86rem;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .ocr-raw-text.visible {
+      display: block;
+    }
+
     @media (max-width: 760px) {
       .nav-inner {
         width: min(100% - 24px, 1080px);
@@ -422,9 +550,15 @@
 
       .add-btn,
       .clear-btn,
-      .final-clear-btn {
+      .final-clear-btn,
+      .import-btn,
+      .import-secondary-btn {
         flex: 1 1 auto;
         text-align: center;
+      }
+
+      .file-input {
+        max-width: none;
       }
 
       .final-grid {
@@ -454,6 +588,49 @@
     </header>
 
     <section class="calculator" aria-label="FRHSD GPA calculator">
+
+      <section class="import-panel" aria-label="Import courses from transcript screenshot">
+        <h2>Import from Transcript Screenshot</h2>
+        <p>
+          Upload a screenshot with course names, final grades, and credits. The image is read in your browser, then you can review the detected rows before importing them.
+        </p>
+
+        <div class="import-actions">
+          <input class="file-input" id="transcriptImageInput" type="file" accept="image/*" aria-label="Upload transcript screenshot">
+          <button class="import-btn" id="readTranscriptBtn" type="button">Read screenshot</button>
+        </div>
+
+        <div class="import-status" id="transcriptImportStatus" aria-live="polite"></div>
+
+        <section class="preview-panel" id="transcriptPreviewPanel" aria-label="Transcript import preview">
+          <p class="preview-note" id="transcriptPreviewNote"></p>
+
+          <div class="table-wrap">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th style="width: 7%;">Use</th>
+                  <th style="width: 35%;">Subject</th>
+                  <th style="width: 18%;">Course Level</th>
+                  <th style="width: 14%;">Final Grade</th>
+                  <th style="width: 18%;">Credits</th>
+                  <th style="width: 8%;">Source</th>
+                </tr>
+              </thead>
+              <tbody id="transcriptPreviewBody"></tbody>
+            </table>
+          </div>
+
+          <div class="import-actions">
+            <button class="import-btn" id="importTranscriptRowsBtn" type="button">Import selected rows</button>
+            <button class="import-secondary-btn" id="clearTranscriptPreviewBtn" type="button">Clear preview</button>
+          </div>
+
+          <button class="ocr-text-toggle" id="toggleOcrTextBtn" type="button">Show OCR text</button>
+          <pre class="ocr-raw-text" id="ocrRawText"></pre>
+        </section>
+      </section>
+
       <section class="panel" aria-label="GPA calculator table">
         <div class="table-wrap">
           <table>
@@ -518,6 +695,7 @@
   </main>
 
 
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     const weights = {
       "A+": { regular: 4.6, honors: 5.6, ap: 6.1 },
@@ -716,8 +894,297 @@
       updateCalculations();
     }
 
+
+    const gpaGradeOptions = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "E"];
+    const transcriptImageInput = document.getElementById("transcriptImageInput");
+    const readTranscriptBtn = document.getElementById("readTranscriptBtn");
+    const transcriptImportStatus = document.getElementById("transcriptImportStatus");
+    const transcriptPreviewPanel = document.getElementById("transcriptPreviewPanel");
+    const transcriptPreviewBody = document.getElementById("transcriptPreviewBody");
+    const transcriptPreviewNote = document.getElementById("transcriptPreviewNote");
+    const importTranscriptRowsBtn = document.getElementById("importTranscriptRowsBtn");
+    const clearTranscriptPreviewBtn = document.getElementById("clearTranscriptPreviewBtn");
+    const toggleOcrTextBtn = document.getElementById("toggleOcrTextBtn");
+    const ocrRawText = document.getElementById("ocrRawText");
+
+    function normalizeTranscriptLine(line) {
+      return line
+        .replace(/[|]/g, " ")
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/\bA\s*\+\b/gi, "A+")
+        .replace(/\bA\s*-\b/gi, "A-")
+        .replace(/\bB\s*\+\b/gi, "B+")
+        .replace(/\bB\s*-\b/gi, "B-")
+        .replace(/\bC\s*\+\b/gi, "C+")
+        .replace(/\bC\s*-\b/gi, "C-")
+        .replace(/\bD\s*\+\b/gi, "D+")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function normalizeGradeToken(token) {
+      const cleaned = token.toUpperCase().replace(/\s+/g, "");
+      const corrections = {
+        "8+": "B+",
+        "8": "B",
+        "8-": "B-",
+        "5": "S",
+        "$": "S",
+        "WAI": "WAT"
+      };
+      return corrections[cleaned] || cleaned;
+    }
+
+    function normalizeCreditValue(value) {
+      const numberValue = Number.parseFloat(value);
+      if (!Number.isFinite(numberValue)) return null;
+      const matchingOption = creditOptions.find(option => Math.abs(Number(option.value) - numberValue) < 0.01);
+      return matchingOption ? matchingOption.value : null;
+    }
+
+    function inferCourseLevel(subject) {
+      const upper = subject.toUpperCase();
+      if (/\(AP\)/.test(upper) || /^AP\b/.test(upper) || /\bADVANCED PLACEMENT\b/.test(upper)) return "ap";
+      if (/\(H\)/.test(upper) || /\bHONORS\b/.test(upper) || /^HON\b/.test(upper) || /\b HON\b/.test(upper)) return "honors";
+      return "regular";
+    }
+
+    function cleanImportedSubject(subject) {
+      return subject.replace(/\s*\((AP|H)\)\s*/gi, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function parseTranscriptRow(line, source = "row") {
+      const cleaned = normalizeTranscriptLine(line);
+      const gradePattern = "(A\\+|A-|A|B\\+|B-|B|C\\+|C-|C|D\\+|D|E|S|WAT|WA|WF|WP|WE|X|I|M|U|P|8\\+|8-|8)";
+      const rowRegex = new RegExp("^(.+?)\\s+" + gradePattern + "\\s+([0-9]+(?:\\.[0-9]+)?)$", "i");
+      const match = cleaned.match(rowRegex);
+      if (!match) return null;
+
+      const rawSubject = match[1].trim();
+      const grade = normalizeGradeToken(match[2]);
+      const credits = normalizeCreditValue(match[3]);
+      if (!rawSubject || credits === null) return null;
+
+      return {
+        subject: cleanImportedSubject(rawSubject),
+        level: inferCourseLevel(rawSubject),
+        grade,
+        credits,
+        source,
+        raw: line
+      };
+    }
+
+    function isGradeOnlyLine(line) {
+      return /^(A\+|A-|A|B\+|B-|B|C\+|C-|C|D\+|D|E|S|WAT|WA|WF|WP|WE|X|I|M|U|P|8\+|8-|8)$/i.test(normalizeTranscriptLine(line));
+    }
+
+    function isCreditOnlyLine(line) {
+      return /^[0-9]+(?:\.[0-9]+)?$/.test(normalizeTranscriptLine(line));
+    }
+
+    function isLikelyCourseLine(line) {
+      const cleaned = normalizeTranscriptLine(line);
+      if (cleaned.length < 3) return false;
+      if (isGradeOnlyLine(cleaned) || isCreditOnlyLine(cleaned)) return false;
+      if (/^(course|subject|grade|credits|credit|final|marking|student|school|transcript)$/i.test(cleaned)) return false;
+      if (/^[^A-Za-z]+$/.test(cleaned)) return false;
+      return true;
+    }
+
+    function parseTranscriptText(text) {
+      const lines = text.split(/\r?\n/).map(line => normalizeTranscriptLine(line)).filter(Boolean);
+      const candidates = [];
+      const ignored = [];
+
+      lines.forEach(line => {
+        const parsed = parseTranscriptRow(line, "row");
+        if (!parsed) return;
+        if (gpaGradeOptions.includes(parsed.grade) && parsed.credits > 0) candidates.push(parsed);
+        else ignored.push(parsed);
+      });
+
+      if (candidates.length === 0) {
+        const courseLines = lines.filter(isLikelyCourseLine);
+        const gradeLines = lines.filter(isGradeOnlyLine).map(normalizeGradeToken);
+        const creditLines = lines.filter(isCreditOnlyLine).map(line => normalizeCreditValue(line)).filter(value => value !== null);
+        const count = Math.min(courseLines.length, gradeLines.length, creditLines.length);
+
+        for (let i = 0; i < count; i++) {
+          const rawSubject = courseLines[i];
+          const parsed = {
+            subject: cleanImportedSubject(rawSubject),
+            level: inferCourseLevel(rawSubject),
+            grade: gradeLines[i],
+            credits: creditLines[i],
+            source: "column",
+            raw: `${rawSubject} | ${gradeLines[i]} | ${creditLines[i]}`
+          };
+
+          if (gpaGradeOptions.includes(parsed.grade) && parsed.credits > 0) candidates.push(parsed);
+          else ignored.push(parsed);
+        }
+      }
+
+      const seen = new Set();
+      const uniqueCandidates = candidates.filter(row => {
+        const key = `${row.subject}|${row.grade}|${row.credits}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      return { rows: uniqueCandidates, ignored, rawText: text };
+    }
+
+    function makePreviewSelect(options, selectedValue) {
+      const select = document.createElement("select");
+      options.forEach(option => {
+        if (typeof option === "string") select.appendChild(makeOption(option, option, selectedValue));
+        else select.appendChild(makeOption(option.value, option.label, selectedValue));
+      });
+      return select;
+    }
+
+    function renderTranscriptPreview(parsed) {
+      transcriptPreviewBody.innerHTML = "";
+      ocrRawText.textContent = parsed.rawText || "";
+
+      parsed.rows.forEach(row => {
+        const tr = document.createElement("tr");
+
+        const useCell = document.createElement("td");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = true;
+        checkbox.setAttribute("aria-label", "Use this imported row");
+        useCell.appendChild(checkbox);
+
+        const subjectCell = document.createElement("td");
+        const subjectInput = document.createElement("input");
+        subjectInput.type = "text";
+        subjectInput.value = row.subject;
+        subjectInput.setAttribute("aria-label", "Imported subject");
+        subjectCell.appendChild(subjectInput);
+
+        const levelCell = document.createElement("td");
+        const levelSelect = makePreviewSelect([
+          { value: "regular", label: "Regular" },
+          { value: "honors", label: "Honors" },
+          { value: "ap", label: "A.P." }
+        ], row.level);
+        levelSelect.setAttribute("aria-label", "Imported course level");
+        levelCell.appendChild(levelSelect);
+
+        const gradeCell = document.createElement("td");
+        const gradeSelect = makePreviewSelect(gpaGradeOptions, row.grade);
+        gradeSelect.setAttribute("aria-label", "Imported final grade");
+        gradeCell.appendChild(gradeSelect);
+
+        const creditCell = document.createElement("td");
+        const creditSelect = makePreviewSelect(creditOptions, row.credits);
+        creditSelect.setAttribute("aria-label", "Imported credits");
+        creditCell.appendChild(creditSelect);
+
+        const sourceCell = document.createElement("td");
+        sourceCell.textContent = row.source;
+
+        tr.append(useCell, subjectCell, levelCell, gradeCell, creditCell, sourceCell);
+        transcriptPreviewBody.appendChild(tr);
+      });
+
+      const ignoredText = parsed.ignored.length ? ` ${parsed.ignored.length} non-GPA or zero-credit row(s) were ignored.` : "";
+      transcriptPreviewNote.textContent = parsed.rows.length
+        ? `Found ${parsed.rows.length} possible GPA course row(s). Review them before importing.${ignoredText}`
+        : `No GPA course rows were found. Try a clearer screenshot or enter the courses manually.${ignoredText}`;
+
+      transcriptPreviewPanel.classList.add("visible");
+      importTranscriptRowsBtn.disabled = parsed.rows.length === 0;
+    }
+
+    async function readTranscriptScreenshot() {
+      const file = transcriptImageInput.files && transcriptImageInput.files[0];
+
+      if (!file) {
+        transcriptImportStatus.textContent = "Choose a screenshot first.";
+        return;
+      }
+
+      if (!window.Tesseract) {
+        transcriptImportStatus.textContent = "OCR could not load. Check your internet connection and try again.";
+        return;
+      }
+
+      readTranscriptBtn.disabled = true;
+      importTranscriptRowsBtn.disabled = true;
+      transcriptImportStatus.textContent = "Reading screenshot... this may take a few seconds.";
+
+      try {
+        const result = await Tesseract.recognize(file, "eng", {
+          logger: message => {
+            if (message.status) {
+              const progress = message.progress ? ` ${Math.round(message.progress * 100)}%` : "";
+              transcriptImportStatus.textContent = `${message.status}${progress}`;
+            }
+          }
+        });
+
+        const parsed = parseTranscriptText(result.data.text || "");
+        renderTranscriptPreview(parsed);
+        transcriptImportStatus.textContent = "Screenshot processed. Review the rows below before importing.";
+      } catch (error) {
+        transcriptImportStatus.textContent = "The screenshot could not be read. Try a clearer crop or enter the courses manually.";
+      } finally {
+        readTranscriptBtn.disabled = false;
+      }
+    }
+
+    function importSelectedTranscriptRows() {
+      const rows = Array.from(transcriptPreviewBody.querySelectorAll("tr"));
+      let importedCount = 0;
+
+      rows.forEach(row => {
+        const shouldUse = row.querySelector('input[type="checkbox"]').checked;
+        if (!shouldUse) return;
+
+        const subject = row.querySelector('td:nth-child(2) input').value.trim();
+        const level = row.querySelector('td:nth-child(3) select').value;
+        const grade = row.querySelector('td:nth-child(4) select').value;
+        const credits = Number(row.querySelector('td:nth-child(5) select').value);
+
+        if (!subject || !grade || !Number.isFinite(credits)) return;
+
+        addCourse({ subject, level, grade, credits });
+        importedCount++;
+      });
+
+      transcriptImportStatus.textContent = importedCount
+        ? `Imported ${importedCount} row(s) into the GPA calculator.`
+        : "No rows were imported.";
+    }
+
+    function clearTranscriptPreview() {
+      transcriptImageInput.value = "";
+      transcriptPreviewBody.innerHTML = "";
+      transcriptPreviewPanel.classList.remove("visible");
+      ocrRawText.textContent = "";
+      ocrRawText.classList.remove("visible");
+      toggleOcrTextBtn.textContent = "Show OCR text";
+      transcriptImportStatus.textContent = "";
+    }
+
+    function toggleOcrText() {
+      ocrRawText.classList.toggle("visible");
+      toggleOcrTextBtn.textContent = ocrRawText.classList.contains("visible") ? "Hide OCR text" : "Show OCR text";
+    }
+
     document.getElementById("addCourseBtn").addEventListener("click", () => addCourse());
     document.getElementById("clearBtn").addEventListener("click", clearAllCourses);
+    readTranscriptBtn.addEventListener("click", readTranscriptScreenshot);
+    importTranscriptRowsBtn.addEventListener("click", importSelectedTranscriptRows);
+    clearTranscriptPreviewBtn.addEventListener("click", clearTranscriptPreview);
+    toggleOcrTextBtn.addEventListener("click", toggleOcrText);
 
     window.addEventListener("beforeunload", saveCourses);
     loadCourses();
